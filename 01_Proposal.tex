@@ -1,0 +1,135 @@
+%% -*- coding: utf-8; -*-
+
+\documentclass[phd, american]{ThesisPUC}
+
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{colortbl}
+\usepackage[dvipsnames, svgnames, x11names, fixpdftex, table,xcdraw]{xcolor}
+\usepackage{numprint}
+\usepackage{textcomp}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage{textcomp}
+\usepackage{graphicx,subfigure}
+\usepackage{float}
+\usepackage{footnote}
+\usepackage[square,numbers,sort&compress]{natbib}
+
+\makeatletter
+\renewcommand\@biblabel[1]{#1 }
+\makeatother
+
+%% DOCUMENT FORMAT ============================================================================
+\newcommand{\Rset}{\mathbb{R}}
+\newcommand{\Zset}{\mathbb{Z}}
+\newcommand{\tabitem}{~~\llap{\textbullet}~~}
+
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\npthousandsep{}
+\npdecimalsign{,}
+
+\tablesmode{figtab} %% [nada, fig, tab ou figtab]
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+\newlength\mylen
+\cftsetindents{figure}{0em}{0em}
+\cftsetindents{table}{0em}{0em}
+
+\usepackage{chngcntr}
+\counterwithout{figure}{chapter}
+\counterwithout{table}{chapter}
+
+%% DOCUMENT INFORMATION =======================================================================
+\title{Incerteza no Mapeamento de Desmatamento e Regeneração Baseado em Aprendizado Profundo}
+\titleuk{Uncertainty in Deep Learning-Based Deforestation and Regeneration Mapping}
+
+\author{Jorge Andres Chamorro Martinez}
+\authorR{Chamorro J., A.}
+
+\advisor{Raul Queiroz Feitosa}{Prof. Dr.}
+\advisorR{Feitosa, R. Q.}
+
+%\coadvisor{Ieda Del'Arco Sanches}{Dra.}
+%\coadvisorInst{National Institute for Space Research}{INPE}
+%\coadvisorR{Sanches, I. D.}
+
+\jury{
+    \jurymember{Gilberto Camara}{Prof. Dr.}{Instituto Nacional de Pesquisas Espaciais}{INPE}
+    \jurymember{Wesley Nunes Goncalves}{Prof. Dr.}{Universidade Federal de Mato Grosso do Sul}{UFMGS}
+    \jurymember{Gilson Alexandre Ostwald Pedro da Costa}{Prof. Dr.}{Universidade do Estado do Rio de Janeiro}{UERJ}    
+%    \jurymember{Ruy Luiz Milidiú}{Prof.}{Pontifical Catholic University of Rio de Janeiro}{PUC-Rio}
+%    \jurymember{Rodrigo C. de Lamare}{Prof.}{Pontifical Catholic University of Rio de Janeiro}{PUC-Rio}
+%    \schoolhead{Márcio da Silveira Carvalho}{Prof.}
+}
+
+\university{Pontifícia Universidade Católica do Rio de Janeiro}
+\uni{PUC-Rio}
+\school{Centro Técnico Científico}
+\department{Engenharia Elétrica}
+\program{Engenharia Elétrica}
+
+\city{Rio de Janeiro}
+\day{28}
+\month{February}
+\year{2023}
+
+%\abreviationstitleuk {List of Symbols and Abbreviations}
+
+% \dedication {To all those whose have a dream and ventured to make it true.}
+
+%% DOCUMENT STRUCTURE =========================================================================
+%-- Author's resume...
+\input{02_authors_resume}
+
+%-- Catalog prekeys...
+\CDD{621.3}
+\catalogprekeywords{\catalogprekey{Engenharia Elétrica}}
+\usecolour{true}
+
+%-- Acknowledgment...
+\input{03_acknowledgment}
+
+%-- Abstract...
+\input{04_a_abstract}
+\input{04_b_abstract_uk}
+
+%-- Keywords...
+\keywords{
+    \key{Reconhecimento de Culturas;}
+    \key{Sensoriamento Remoto;}
+    \key{Modelos Graficos Probabilisticos;}
+    \key{Imagens óticas;}
+    \key{Imagens de radar}
+}
+\keywordsuk{
+    \key{Crop Recognition;}
+    \key{Remote Sensing;}
+    \key{Probabilistic Graphical Models;}
+    \key{Optical imagery;}
+    \key{Radar imagery}
+}
+
+% \epigraph {All men have stars, but they are not the same things for different people. For some, who are travelers, the stars are guides. For others they are no more than little lights in the sky. For others, who are scholars, they are problems... But all these stars are silent. You—you alone will have stars as no one else has them.}
+% \epigraphauthor {Antoine de Saint-Exupéry}
+% \epigraphbook {The Little Prince} 
+
+%-- Textual elements...
+\begin{document}
+   \input{05_abrevs.tex}
+   \input{1-Introduction.tex}
+   \input{2-Related_Works.tex}
+   \input{3-Fundamentals.tex}
+   \input{4-Methodology.tex}
+   \input{5-Experimental.tex}
+   \input{6-Conclusions.tex}
+   \arial
+   \bibliography{references}
+   \normalfont
+%   \input{chapter-7}
+\end{document}

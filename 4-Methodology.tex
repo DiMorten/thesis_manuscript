@@ -1,0 +1,80 @@
+\chapter{UNCERTAINTY ESTIMATION TO REDUCE THE MANUAL ANNOTATION EFFORT }\label{sect:Methodology}
+This chapter describes the design of experiments to evaluate the impact of uncertainty estimation to aid the annotation and auditing process in deforestation mapping in the Amazon rainforest, using Monte Carlo Dropout (MCD), ensembles, and a single confidence measure, i.e., the entropy. The next chapter reports and discusses the results of these preliminary experiments. 
+
+The following sections describe the adopted methodology, which includes adding the distance from the past deforestation maps to the input data. Besides, in a second protocol, the training relies only on labeled training data from earlier dates avoiding manual labeling of parts of the target image for training the network.%This chapter describes experiments the proposed method based on uncertainty estimation to aid the annotating and auditing process in deforestation mapping, using Monte Carlo Dropout (MCD) and ensembles to obtain the uncertainty map. Preliminary results are presented in the following chapters for this methodology. In the following, we also describe the use of an additional input feature to improve the classification outcomes, namely the distance to the past deforestation map. Besides, we propose a protocol to train using images from the past and inferring on a new upcoming date, which allows the proposed method to be used in an real-world operational setting.
+% This chapter describes the proposed method based on uncertainty estimation to aid the annotating and auditing process, using Monte Carlo Dropout (MCD) and ensembles to obtain the uncertainty map. In the following, we also describe the use of an additional input feature to improve the classification outcomes, namely the distance to the past deforestation map. Besides, we propose a protocol to train using images from the past and inferring on a new upcoming date, which allows the proposed method to be used in an real-world operational setting.
+
+
+\section{ResUnet-Dropout network}
+The architecture of the network used in this work is described in Figure \ref{fig:resunet}. It is a modified version of the fully convolutional ResUnet used in \cite{ortega2021comparison}. Dropout was added in each up-sampling layer following recent works \cite{dechesne2021bayesian, nguyen2021comparison, kwon2020uncertainty}. We used spatial dropout in all cases \cite{lee2020revisiting}. To detect the deforestation changes from time $T_{-1}$ to $T_0$, the input to the network is the concatenation of Sentinel-2 images corresponding to both dates $(S2_{T_{-1}}:S2_{T_{0}})$, where $T_0$ is the current date, $T_{-1}$ is the date from one year before the current date, $S2_{T_{0}}$ is the Sentinel-2 image for the current date, and $S2_{T_{-1}}$  is the Sentinel-2 image for the previous year.
+
+\begin{figure*}[h!]
+\centering
+% \includegraphics[scale=0.6]{figures/method/model.png}
+\includegraphics[scale=0.5]{figures/3-Methodology/resunet network.pdf}
+\caption{Fully convolutional ResUnet architecture. Dropout is enabled during training and inference. Adapted from \cite{ortega2021comparison}}
+\label{fig:resunet}
+\end{figure*}
+
+\section{Temporal distance to past deforestation}
+
+Deforestation usually occurs spatially adjacent to regions deforested in previous years. In this work, we leverage from the information about past deforestation taken from PRODES~\cite{prodes}, and use it as an additional input feature map, which is concatenated to the input Sentinel-2 image pair. We define the temporal distance to past deforestation map $D(x,y,T_0)$ as:
+
+\[D_t(x,y,T0) = T_0 - deforestation\_year(x,y) + 1\]
+
+\noindent
+where $T_0$ is the current year, and $deforestation\_year(x,y)$ is the year of deforestation for the pixel at location ($x,y$). We set $deforestation\_year(x,y)$ to $T_0$ in pixel locations where deforestation has not occurred. If we trained and tested on the most recent image pair, the input tensor comprised $(S2_{T_{-1}}, S2_{T_{0}}, D_{T_{-1}}(x,y))$, where $T_0$ and $T_{-1}$ correspond to the current and previous year acquisition dates, and $S2_{T_{0}}$ and $S2_{T_{-1}}$ represent the corresponding Sentinel-2 images for $T_0$ and $T_{-1}$ dates, respectively.
+
+\section{Uncertainty to Aid the Auditing Process}
+
+
+As mentioned, the experiments used as ground truth were the deforestation reports published by PRODES. In PRODES's methodology, 100\% of the non-deforested area until the current year is visually inspected and audited by INPE's personnel in each upcoming year. In this work, we propose an alternate semi-automatic workflow where we first train a neural network on image pairs from previous years and then run the inference on a recent image pair (as explained in Section \ref{sec:training_past_dates}). 
+
+So, we consider a methodology to reduce the labeling/auditing effort that involves two steps. 
+The first step consists of running an automatic classification using a deep learning model trained as outlined before. Beyond delivering a deforestation map, the first step computes the uncertainty associated with the classification of each pixel. 
+In the second step, the photo interpreter only audits the areas whose uncertainty computed in step 1 exceeds a user-selected threshold. As classification metrics, we obtain $F_{1_{low}}$ for samples with low uncertainty, and $F_{1_{high}}$ for samples with high uncertainty. We call the percentage of test samples with high uncertainty the Alert Area (AA). We expect that $F_{1_{low}}>F_1>>F_{1_{high}}$, where $F_1$ refers to classification metrics prior to applying the uncertainty methodology.
+
+\bigskip
+The final deforestation report results from joining:
+\begin{itemize}
+\item on the pixels with low uncertainty, the classes assigned by the model
+
+\item on the pixels with high uncertainty, the classes assigned by the photo-interpreter 
+\end{itemize}
+
+\bigskip
+
+$F_{1_{audit}}$ represents the classification metrics after the expert auditor has correctly re-annotated the samples with high uncertainty corresponding to the AA percentage.
+
+%The experiments reported next aimed to test the following two hypotheses:
+
+
+%1) the accuracy on the areas with low uncertainty meets the application performance requirements, and
+
+
+%2) Audited by human analysts, the pixels with high uncertainty will make up a small portion of the image, thus reducing the human annotation effort significantly.
+
+\iffalse
+Reference ground truth for deforestation detection in the Amazon is acquired yearly following the PRODES methodology~\cite{prodes}. In such methodology, 100\% of the Amazon area outside of the past deforestation regions is visually inspected and audited by INPE's personnel in each upcoming year. In this work, we propose an alternate semi-automatic workflow where we first train a neural network on image pairs from previous years, and then run the inference on a recent image pair (as explained in Section \ref{sec:training_past_dates}). Instead of auditing 100\% of total area, we propose to estimate the classification uncertainty for each pixel location. %, which we expect to produce low uncertainty values for areas we can trust and have high classification metrics, and high uncertainty values for areas the network does not know if it is correct, where we expect classification metrics to be significantly lower. 
+Then, an uncertainty threshold should be applied on the uncertainty map, and compute the classification metrics for samples with low and high uncertainty. Namely, we obtain $F_{1_{low}}$ for samples with low uncertainty, and $F_{1_{high}}$ for samples with high uncertainty. We call the percentage of samples with high uncertainty as the Alert Area (AA). 
+
+We expect that for a low AA, the majority of inferred samples would represent a high $F_{1_{low}}$, while a minority of the inferred samples corresponding to the AA percentage produce a significantly lower $F_{1_{high}}$ such that $F1_{low}>F_1>>F1_{high}$, where $F_1$ refers to classification metrics prior to applying the uncertainty methodology. Finally, instead of auditing 100\% of the image, only samples with high uncertainty, corresponding to a small percentage (AA), would be sent to an expert auditor who would create their corresponding reference ground truth.  
+\fi
+
+\section{Uncertainty Methods}
+
+For the preliminary results, a comparison of MCD and ensembles is presented for the ResUnet base network. Besides, entropy from a single forward run is also assessed. In the latter case, we calculated entropy from $n$ different training runs and present the best and worst case in terms of $F_{1_{low}}$.
+ 
+
+\section{Training On Samples From the Past To Infer On Upcoming Date}
+\label{sec:training_past_dates}
+Recent works in deforestation detection used an image from the same date to train and test, by dividing the raster into non-overlapping tiles and setting a percentage of those tiles to train and test within the same image \cite{ortega2021comparison}. However, in a real-world application, collecting ground truth data for each upcoming date would be costly and unfeasible. In this work, we propose an operational solution where we train the network a date pair from the past and infer on a new upcoming date which was not seen during training. Formally, we trained on $(S2_{T_{-2}}, S2_{T_{-1}}, D_{T_{-2}}(x,y))$ and inferred on $(S2_{T_{-1}}, S2_{T_{0}}, D_{T_{-1}}(x,y))$, where $S2$ corresponds to a Sentinel-2 image. $T_0$ corresponds to the image from the current date, $T_{-1}$ to the previous year date, and $T_{-2}$ to the second year before $T_0$. In this way, the proposed approach could directly be applied in a real-world application. % The aforementioned training scheme is presented in Figure \ref{fig:resunet_past_dates}.
+
+% Recent works in deforestation detection used an image from the same date to train and test, by dividing the raster into non-overlapping tiles and setting a percentage of those tiles to train and test within the same image \cite{ortega2021comparison}. However, in a real-world application, collecting ground truth data for each upcoming date would be costly and unfeasible. In this work, we propose an operational solution where we train the network on date pairs from the past and infer on a new upcoming date which was not seen during training. Formally, we trained on [$(S2_{T_{-2}}, S2_{T_{-1}}, D_{T_{-2}}(x,y))$, $(S2_{T_{-3}}, S2_{T_{-2}}, D_{T_{-3}}(x,y))$, $(S2_{T_{-4}}, S2_{T_{-3}}, D_{T_{-4}}(x,y)),...$] and inferred on $(S2_{T_{-1}}, S2_{T_{0}}, D_{T_{-1}}(x,y))$, where $S2$ correspsponds to a Sentinel-2 image. $T_0$ corresponds to the image from the current date, $T_{-1}$ to the previous year date, and so on. In this way, the proposed approach could directly be applied in a real-world application. The aforementioned training scheme is presented in Figure \ref{fig:resunet_past_dates}.
+
+% \begin{figure}[h!]
+% \centering
+% \includegraphics[scale=0.45]{figures/method/past_dates_scheme.png}
+% \caption{Network scheme training on samples from past date pairs, and inferring on an unseen date.}
+% \label{fig:resunet_past_dates}
+% \end{figure}

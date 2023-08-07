@@ -1,0 +1,266 @@
+\chapter{FUNDAMENTALS}\label{sect:Fundamentals}
+This chapter presents the theoretical foundations on which the proposals presented in subsequent chapters are based. It is organized into two sections.
+The first section presents the literature's most widely used uncertainty assessment approaches. The second section briefly introduces the so-called Visual Transformers.
+
+\section{Uncertainty Assessment Approaches}
+
+We group uncertainty estimation into 
+\begin{itemize}
+    \item confidence-based, 
+    \item multiple-outcome-based, and
+    \item evidential learning,
+\end{itemize}
+\noindent 
+methods as detailed in the following.
+
+\subsection{Confidence-Based Approaches}
+
+The first group of methods depends on the model's confidence in its prediction. Below, we briefly present the most widely used metrics computed from the discrete probability distribution at a model's output.
+
+In the following, we denote with $\textbf{y}=[ y_1,..., y_K]$ the $K$-dimensional vector representing the discrete probability distribution assigned by the model for a given input. It is assumed that $\textbf{y}$ is a simplex, i.e., $y_k \geq 0$ for all $k \in \{1,...,K\}$ and that $\{y_k\}_{k=1}^K$ add up to one.
+
+\bigskip
+\noindent
+\textit{Entropy}:%\subsubsection{Entropy}
+
+The most widely used metric for classifier's confidence is the entropy defined as
+
+\begin{equation} \label{eq:Entropy}
+h(\textbf{y}) = - \sum_{k} y_k*log (y_k)
+\end{equation}
+
+The highest model confidence corresponds to the lowest entropy value ($h(\textbf{y})=0)$ when the model assigns probability equal to one to one particular class and probability zero to all other classes. Conversely, the highest entropy value is reached when the model gives equal probabilities to all classes, corresponding to the lowest confidence.%The highest model confidence corresponds to the lowest entropy value ($h(\textbf{y})=0)$ when the model assigns probability equal to one to one particular class, and probability zero to all other classes. The highest entropy value is reached when the model assigns equal probabilities to all classes, which corresponds to the lowest confidence.
+
+
+\bigskip
+\noindent
+\textit{Maximum Margin}:
+
+
+Margin-based confidence \cite{makingsynthesis} corresponds to the difference between the highest and the second most likely class, formally:
+
+\begin{equation}
+MaxMargin(\textbf{y}) = y_a - y_b
+\end{equation}
+\iffalse
+\begin{equation}
+u_i = P(\hat{y}_{1,i}|x_i)-P(\hat{y}_{2,i}|x_i)
+\end{equation}
+\fi
+
+\noindent
+where $a$ and $b$ are the first and the second most likely class labels, respectively. 
+%$s_i$ is the margin-based uncertainty for pixel location $i$, $P(y_{1,i})$ and $P(y_{2,i})$ are the highest and second highest class probabilities, respectively.
+
+% netzer2011reading
+\bigskip
+\noindent
+\textit{Most Likely Label}:
+
+In this approach, one takes as confidence the raw predicted probability value of the most likely class label. 
+\begin{equation}
+MaxL (\textbf{y}) = max ({ \{ y_k \}_{k=1}^K })
+\end{equation}
+\bigskip
+Notice that $MaxL (\textbf{y})$ ranges from $1/K$ to 1.
+\iffalse
+\begin{equation}
+u_i = -P(\hat{y}_{n,i}|x)
+\end{equation}
+\fi
+
+%Where $P(\hat{y}_{n,i}|x)$ is the predicted class probability for the class with the least confidence $n$ and pixel location $i$. 
+
+% \subsection{Maximum Mutual Information}
+
+% This method calculates the Mutual Information (MI) as uncertainty metric. The samples with maximum MI correspond to the most uncertain.
+
+% \begin{equation}
+% s_i = H[y|x]-
+% \end{equation}
+
+
+\subsection{Multiple-Outcome Approaches}
+
+The methods introduced in the previous subsection are simple to implement and require a single training and inference run. Differently, the consistency-based uncertainty estimates rely on outcomes of multiple inference runs corresponding by either considering multiple random initialization values during training (e.g., ensembles), creating randomness at inference (e.g., Monte Carlo Dropout), or using the same network on augmented versions of the same input data (Test-Time Augmentation). In the following, we introduce the consistency-based methods.
+
+To accommodate multiple outcomes for the same input, we denote hereafter with $\textbf{y}^{(i)}=[ y_1^{(i)},..., y_K^{(i)}]$ the $K$-dimensional vector representing the discrete probability distribution assigned by the $i$-th model for a given input, where $i \in \{1,...,n\}$, and $n$ is the number of outcomes.
+
+The so-called final prediction is given by the average probability vector computed over the $n$ outcomes, formally:
+ \begin{equation} \label{eq:FinalPrediction}
+ \boldsymbol{\mu}
+ =\frac{1}{n}\sum_{i=1}^{n}{\textbf{y}^{(i)}}
+ \end{equation}
+
+\bigskip
+\noindent
+\subsubsection{Monte Carlo Dropout (MCD)}
+
+Dropout is a technique commonly used in the training phase to reduce overfitting. All the forward and backward connections with a dropped node are temporarily removed, thus creating a new network architecture out of the parent network. The set of dropped-out nodes is selected randomly at each forward/backward pass. Usually, at inference time all nodes remain active. 
+
+MCD differs from the conventional Dropout because the strategy is applied in the inference step. In MCD, the inference is carried out $n$ times, each time with a different set of dropped-out neurons, resulting in a different outcome at each run. 
+ It can be proved that this procedure is an approximation of Bayesian inference \cite{gal2016dropout}. It corresponds to sampling from the posterior distribution in each inference run.  %Using Dropout at inference is equivalent to sampling from the posterior distribution in each inference run, and it can approximate Bayesian inference \cite{gal2016dropout}. In MCD, the inference is performed for a number $n$ of times using Dropout, resulting in a different outcome at each run. 
+
+The uncertainty value is obtained by calculating uncertainty metrics over the $n$ predictions. This calculation is carried out in semantic segmentation for each image pixel, producing an uncertainty map. In Subsection \ref{ref:metrics}, we describe different ways to compute uncertainty metrics from these $n$ results.
+
+
+\bigskip
+\noindent
+\subsubsection{Ensembles}
+
+Ensemble methods combine the predictions of several different deterministic networks at inference. A key issue in designing network Ensembles  is diversity. In other words,  the errors of each ensemble member should concentrate on different regions of the feature space.
+
+Diversity can be achieved in different ways. In Deep Learning, it is common practice to create ensembles by training the same basic network architecture starting from different random initializations \cite{lakshminarayanan2017simple}. So, each training run produces a different ensemble member. 
+
+This is the strategy adopted in our research. Therefore, we obtain $n$ distinct networks, obtaining $n$ different results for each input. 
+ As with the Dropout strategy, uncertainty is calculated upon the multiple outcomes, using different metrics, as described in Subsection \ref{ref:metrics}.
+
+
+It is worth noticing that this method is more computationally expensive than MCD, because it involves training $n$ networks, whereas MCD requires training a single network. %Ensembles consist of training the same network architecture multiple times. Due to random initialization, each training run produces different outcomes at inference. ensembles have been successfully used to boost performance and also to estimate uncertainty \cite{lakshminarayanan2017simple}. Uncertainty is obtained by calculating metric values over the inference outcomes of separately trained networks. This method is more computationally expensive compared to MCD, which only needs to train once. The uncertainty metrics we considered are described in Subsection \ref{ref:metrics}.
+
+% As in MCD, we assessed multiple uncertainty metrics: Predictive entropy, predictive variance, mutual information and expected Kullback-Leibler divergence.
+\bigskip
+\noindent
+\subsubsection{Test-Time Augmentation}
+
+Test-Time Augmentation (TTA) \cite{wang2019aleatoric} is one of the simplest uncertainty estimation techniques, and it relies on a single network. First, a single deterministic network is trained. At test time, data augmentation is applied to each test sample (e.g. rotation, flip, mirror and scaling). Then the disagreement between the different outcomes from the sample augmentations is calculated using one of the uncertainty metrics described in Subsection \ref{ref:metrics}.
+
+TTA is different from the previous approaches because it estimates the so-called aleatoric (data) uncertainty caused by variations in the input caused by various noise sources. MCD and ensembles capture uncertainty linked to the models themselves, the so-called epistemic or model uncertainty. %TTA is different from the previous approaches because it estimates the so-called aleatoric (data) uncertainty, caused by variations/noise in the input. MCD and ensembles capture uncertainty linked to the models themselves, the so-called epistemic or model uncertainty. 
+
+
+
+\subsubsection{Uncertainty Metrics}
+\label{ref:metrics}
+
+This subsection describes the metrics used in this research to estimate the uncertainty from the $n$ results produced by MCD, Ensembles, or TTA.
+
+\bigskip
+\noindent
+\textit{Predictive Entropy}: 
+
+In few words, the Predictive Entropy $H(\textbf{y})$ is the \textit{entropy}, as defined in eq. \ref{eq:Entropy},  computed upon the \textit{final prediction} defined in eq. \ref{eq:FinalPrediction}  \cite{wang2019aleatoric, mcclure2019knowing}. So, the definition of predictive entropy is given by:
+
+\[H(\textbf{y})\approx -\frac{1}{k}\sum_{k=1}^{K}{\mu_k}log({\mu_k}) }\]
+
+%\[H(\textbf{y}(\textbf{p})|\textbf{x}(\textbf{p}))\approx -(1/K)*\sum_{k=1}^{K}{\mu_k(\textbf{p})log(\mu_k(\textbf{p})) }\]
+
+\noindent
+where $\mu_k$ is the mean probability across inference runs for class $k$, and $K$ is the number of classes. Additionally, we assessed other uncertainty metrics as an ablation study. %We compared the aforementioned predictive entropy with three other uncertainty metrics: Predictive variance, Mutual Information (MI) and Expected Kullback-Leibler Divergence. These 3 metrics compute the divergence between the average prediction $\mu_k(\textbf{p})$ and the individual predictions.
+
+ 
+
+\bigskip
+\noindent
+\textit{Predictive Variance}: 
+
+The Predictive Variance is the average variance computed over the $K$ classes \cite{yang2017suggestive}. 
+Recall that the $k$-th component $\mu_k$ of the final prediction vector  $\boldsymbol\mu$ (eq. \ref{eq:FinalPrediction}) is given by
+
+
+\[\mu_k= \frac{1}{n}\sum_{i=1}^{n}{y_k^{(i)}
+
+So, the variance of the $n$ predictions for class $k$ can be computed as
+\[\sigma_k^2= \frac{1}{n}\sum_{i=1}^{n}{(y_k^{(i)}-\mu_k)^2
+
+The Predictive Variance $\boldsymbol\sigma^2$ is the average of class variances, specifically:
+\[\boldsymbol\sigma^2= \frac{1}{K}\sum_{k=1}^{K}{\sigma_k^{2}}
+%^2(\textbf{p}) }\]
+%\[u(\textbf{p})= \frac{1}{k})*\sum_{k=1}^{K}{\sigma_k^2(\textbf{p}) }\]
+
+
+\bigskip
+\noindent
+\textit{Mutual Information}: 
+
+ The Mutual Information $MI(\textbf{y})$ assesses the similarity between a set of random variables that were sampled simultaneously. It informs how much information from one random variable is present in another \cite{learned2013entropy}. Its value is the difference between the predicted entropy computed on the final prediction and the average of the entropy of each prediction.
+
+\[MI(\textbf{y}})=H(\textbf{y}) - \frac{1}{nK}\sum_{i=1}^{n}{\sum_{k=1}^K y_k^{(i)}log (y_k^{(i)})}\]
+%[MI(\textbf{y}|\textbf{x})=H(\textbf{y}|\textbf{x}) - (1/n)*\sum_{i=1}^{n}{H^{(i)}(\textbf{y}^{(i)}|\textbf{x}^{(i)})}\]
+
+\bigskip
+\noindent
+\textit{Expected Kullback-Leibler Divergence}: 
+
+This Kullback-Leibler (KL) Divergence measures the divergence between two probability distributions \cite{kullback1951information}. In this context, the Expected KL Divergence (EKL) measures the average (expected) KL divergence between the final and the individual predictions, formally:
+
+\[EKL(\textbf{y})= -\frac{1}{n}\sum_{i=1}^{n}{\sum_{k=1}^{K}{\mu_k log(\mu_k/y_k^{(i)}) }}\]
+
+
+
+\section{Evidential learning}
+
+Multiple-outcome approaches are computationally expensive due to the need of either training or inferring multiple times. Evidential learning is an alternative uncertainty estimation method which allows to obtain uncertainty using a single training run and a single inference step \cite{sensoy2018evidential}. 
+
+Let's assume that each class elected by one of the aforementioned multi-output approaches represents a sample drawn from some underlying categorical distribution parametrized by a probability vector \boldsymbol{p}. Intuitively, if one of those classes often comes about, this is an indication of low uncertainty. On the other hand, if more than one class occur with similar frequency, this is a strong indication of high uncertainty.
+
+Going a step further, we assume that each probability vector \boldsymbol{p} is drawn from some other higher-order distribution.
+
+Evidential learning seeks to learn the parameters of such high-order distributions. So, instead of drawing samples from distributions, evidential learning aims at learning the distribution over these distributions, called hereafter evidential distribution, directly from the data. Therefore, a sample drawn from the evidential distribution defines itself a distribution over the data.
+
+Let's assume that a class label $L \in \{1,...,k\}$ is a sample drawn from a likelihood function of the categorical form parameterized by probability vector \boldsymbol{p},  i.e.,
+
+\[ L \sim  categorical(\boldsymbol{p})\]
+
+As in \cite{sensoy2018evidential}, we further assume that the discrete probability distribution \boldsymbol{p} can be estimated using a Dirichlet prior:
+%[??]
+\[\boldsymbol{p} \sim Dirichlet(\boldsymbol{\alpha)}\]
+The Dirichlet prior is itself parametrized by a set of $K$ (the number of classes) parameters, here denoted $\boldsymbol{\alpha}$. A sample drawn from the Dirichlet distribution is a realization of the distribution probabilities \boldsymbol{p}.
+
+
+
+
+
+
+
+
+
+
+%-----------------
+
+Typical neural networks have a softmax function at the last layer to produce class probabilities $\{{y_k}\}_{k=1}^K$ from the logits at its inputs produced by the network, as shown in Figure \ref{fig:cnn}. 
+
+\begin{figure*}[h!] 
+\centering
+\includegraphics[scale=0.55]{figures/2-Fundamentals/Typical CNN.png}
+\caption{Typical CNN architecture with a softmax attached to the last layer.}
+\label{fig:cnn}
+\end{figure*}
+
+In evidential network, instead, the network computes the so-called evidences $e_k$, which are applied to the last layer to compute the parameters of the Dirichlet distribution $\boldsymbol{\alpha}=[\alpha_1,...,\alpha_K]$, as $\alpha_k = e_k + 1$, rather than a single probability distribution $\boldsymbol{y}=[y_1,...,y_K]$ (see Figure \ref{fig:beliefs}).
+
+\begin{figure*}[h!] 
+\centering
+\includegraphics[scale=0.55]{figures/2-Fundamentals/Evidential beliefs.png}
+\caption{Evidential approach: the CNN computes the evidences from which the Dirichlet parameters are computed. The belief mass and the uncertainty are directly computed from the Dirichlet parameters.}
+\label{fig:beliefs}
+\end{figure*}
+
+The uncertainty and class probabilities can be directly computed from the Dirichlet parameters as follows.
+
+Let $b_k$, be the belief mass for class $k \in \{1,...,K\}$ and $u$ the uncertainty mass, where
+
+\[u+\sum_{k=1}^{K}b_k=1\] 
+
+\noindent
+with $u\geq 0$ and $b_k \geq 0$. The belief mass can be computed from the evidence $e_k$ for class $k$ (provided from the network output), as 
+
+\[b_k=\frac{e_k}{S}\] 
+\[u=\frac{K}{S}\] 
+
+\noindent
+where $S=\sum_{k=1}^{K}(e_k+1)$.
+
+Additionally,  the expected probability for the $k$-th class is the mean of the corresponding Dirichlet distribution and computed as
+
+
+\[ y_k= \frac{\alpha_k}{S} \]
+% $\textbf{\alpha}=[\alpha_1,...,\alpha_K]$ %
+
+
+% During training, the lossf unction maximizes model fit and also minimizes incorrect evidence.
+The equations above are easily differentiable and bring no difficulty to the backpropagation of the error gradient.
+The loss function for training the network is composed of up to three terms that take into account the cross-entropy to minimize the prediction error, the variance of the Dirichlet experiment generated by the neural network and the Kullback-Leibler (KL) divergence as a regularization term.
+
+% by penalizing the values from the "not known" state that do not contribute to data fit\textcolor{red}{what else Jorge?}.
+
+As indicated at the beginning of this explanation, this approach involves training a single network and a single inference step to compute class probability distributions and uncertainty.

@@ -1,0 +1,55 @@
+\chapter{Summary and Next Steps}\label{sect:Conclusions}
+
+In this work, preliminary results were presented for uncertainty estimation for deforestation detection in the Brazilian amazon using optical satellite images. A comparison of multiple uncertainty estimation methods including confidence-based approaches, MCD and ensembles was presented. 
+
+As next steps, more uncertainty estimation methods will be assessed including additional confidence-based approaches and evidential deep learning. Furthermore, a novel uncertainty estimation approach for transformer base networks will be presented. Finally, experiments will be extended to an additional application, namely secondary vegetation mapping. % implementar no brazil data cube
+% colocar cada uma das tarefas
+% lista as tarefas
+% coloca uma tabela cronograma
+
+Specifically, the following list of tasks will be performed as next steps:
+
+\begin{enumerate}
+\item Implement evidential deep learning for deforestation mapping using ResUnet CNN as a base network
+\item Implement transformer as a base network using the confidence-based, MCD and ensemble methods
+\item Implement evidential deep learning for transformer as a base network
+\item Repeat experiments for secondary vegetation mapping
+\item Implement the proposed methods in a real operational environment using Brazilian Data Cube and SITS
+\item Write a research paper
+\item Final document writing
+\end{enumerate}
+
+The timetable for the remaining time of the doctoral research project is presented in Figure \ref{fig:timetable}.
+
+During this doctorate, a total of 7 research works have been published, including 3 papers in research journals and 4 papers in international conferences \cite{martinez2021fully, martinez2021open, chamorro2021towards, martinez2022comparison, rogozinski20223d, rogozinski2021exploring, sanches2020first}. An additional work has already been accepted for publication in a research journal \cite{10042432}, and another work containing the preliminary results presented in this document is in the submission process for a research journal \cite{chamorro2023semi}.
+
+\begin{figure*}[h!]
+\centering
+% \includegraphics[scale=0.6]{figures/method/model.png}
+\includegraphics[scale=0.65]{figures/5-NextSteps/cronograma.PNG}
+\caption{Timetable for the remaining time of the doctoral study.}
+\label{fig:timetable}
+\end{figure*}
+%% lista de tarefas
+% evidential learning para cnn
+% transformer (elegir 1) e os mesmos metodos aplicados para a cnn (entropia, mcd, ensemble)
+% evidential com o transformer
+% rodar tudo isso para vegetacao secundaria (nao e estritamente necessario) (desejavel)
+% implementacao no brazil data cube/sits (desejavel) 
+% escrever um paper (resumo da tese)
+% no fim, colocar uma lista das publicacoes e o ultimo, submitted
+
+%% cronograma desejado
+
+
+
+
+% The proposed uncertainty estimation method was able to separate between inferred samples that can be trusted (samples with low uncertainty) and samples that the network does not know if they are correct (samples with high uncertainty), which could be sent to an expert annotator for manual auditing. For a low percentage of samples to be audited of 3\%, the remaining 97\% of low uncertainty samples produced improvements from 86.5\% to 96.2\% average F1 score for the PA site, and from 81.8\% to 91.0\% for the MT site. Furthermore, if the aforementioned 3\% of high uncertainty samples were perfectly audited, the improvement would be of up to 97.8\% F1 score, which is higher than what is required by INPE for an operational implementation of automatic deforestation mapping.
+
+% Furthermore, our experiments indicated that we can train the network on past date pairs, and infer on a new upcoming date without the need to use ground truth from the upcoming date during training. Remarkably, training with past dates produced only a slight decrease in F1 score from 97.8 to 97.6 in PA site, and an increase in F1 score from 93.8 to 95.8 in MT site. 
+
+
+% \subsection*{Future directions}
+
+% As future directions, we will investigate recent base architectures such as vision transformer \cite{dosovitskiy2020image, ranftl2021vision}. Besides, we will consider other uncertainty estimation methods such as evidential deep learning \cite{sensoy2018evidential}.
+

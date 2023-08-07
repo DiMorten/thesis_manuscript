@@ -1,0 +1,500 @@
+\chapter{PRELIMINARY STUDY: EXPERIMENTAL ANALYSIS}\label{sect:Results}
+
+This chapter reports the experiments carried out in order to validate the method proposed in the previous chapter as a preliminary study. First, the datasets used in the experiments for deforestation detection are presented. Then, the experimental protocol followed for the proposed  methodology is described, and the parameter setup is detailed. Finally, the results obtained in the experiments are reported.
+
+\section{Study Areas}\label{sect:Datasets}
+
+We evaluated the proposed method in two study areas in the Brazilian Legal Amazon (Figure \ref{fig:study_areas}). Both sites have a mixed land cover. The first site is located in the Para state (PA), with an area of $92\times 177 Km^2$. This site is mainly composed of dense evergreen forest and pasture. For the single date pair experiments, we used $[T_{-1}, T_0]=[2018, 2019]$. For the experiments training with past dates, we trained with the $[T_{-2}, T_{-1}]=[2017, 2018]$ date pair and tested on a new upcoming image using $[T_{-1}, T_0]=[2018, 2019]$. The second site is located in the Mato Grosso state (MT), with an area of $134\times 208 Km^2$. This site is mainly composed of dense forests, soy fields and pastures. We used $[T_{-1}, T_0]=[2019, 2020]$. For the multiple date pair experiments, we trained with the $[T_{-2}, T_{-1}]=[2018, 2019]$ date pair. In all cases, we used Sentinel-2 images and we did not use the 60$m$ bands. We used the remaining channels with $10m$ resolution, by up-sampling the $20m$ bands with the nearest neighbor method.
+
+\begin{figure*}[ht!]
+    \centering
+		\includegraphics[scale=0.4]{figures/4-Experimental/study_areas_v2.png}
+	\caption{Geographical location of the study areas, and RGB composition of the corresponding Sentinel-2 images acquired at $T_{-1}$.}
+\label{fig:study_areas} % to-do: improve blocks?
+\end{figure*}
+
+
+
+\section{Experimental Protocol}
+We extracted overlapping sub-images of size $128\times 128$ for training with 70\% overlap. We selected only the sub-images with at least 2\% of the deforestation class for training. The train, validation and test areas were selected by splitting the site into non-overlapping tiles and selecting 40\% for training, 10\% for validation and 50\% for testing. We used on-line data augmentation by randomly applying rotations and horizontal and vertical flips on each training batch.
+
+We used the same parameter configuration as in \cite{ortega2021comparison} for the ResUnet architecture, and we added dropout in each decoder stage in accordance to previous works \cite{dechesne2021bayesian, nguyen2021comparison, kwon2020uncertainty}. The parameter configuration is presented in Table \ref{tab:parameters}. We used Max-pooling as down-sampling operator, and nearest-neighbor up-sampling. We used dropout rate of 0.25 in all cases. We used batch size 32 and weighted categorical cross entropy with weights of 0.1 for non-deforestation, 0.9 for deforestation and 0 for not considered areas including past deforestation and cloudy regions. For the accuracy assessment, we ignored pixels within a spatial buffer of 2px surrounding the ground truth deforestation polygons, and also pixel clusters predicted as deforestation with an area smaller than $6.25ha$. The reason for the former rule is to avoid misregistration problems, also considering that PRODES references have a spatial resolution equivalent to Landsat multispectral bands. The reason for the later rule was that $6.25ha$ is PRODES minimum mapping unit.
+
+% Please add the following required packages to your document preamble:
+% \usepackage{multirow}
+\usepackage{adjustbox}
+\begin{table*}[ht!]
+\centering
+
+\caption{Network architecture for the ResUnet-based FCN. C: Convolution, DS: Down-sampling, RB: Residual block, D: Dropout, US: Up-sampling. Convolution layers are parametrized as ($kernel\_width \times kernel\_height, \#filters$)}
+\scalebox{0.8}{
+\begin{tabular}{c|cc|c|c}
+\hline
+\textbf{Encoder} & \multicolumn{2}{c|}{\textbf{Bottleneck}} & \textbf{Decoder} & \textbf{Output}            \\ \hline
+DS(RB(3$\times$3, 32))  & \multirow{3}{*}{3$\times$}    & \multirow{3}{*}{RB(3$\times$3, 128)}     & D(US(C(3$\times$3, 128)))  &                            \\
+DS(RB(3$\times$3, 32))  &                        &      & D(US(C(3$\times$3, 64)))   & Softmax(C(1$\times$1, $\#classes$)) \\
+DS(RB(3$\times$3, 32))  &                        &       & D(US(C(3$\times$3, 32)))   &                            \\ \hline
+\end{tabular}}
+\label{tab:parameters}
+\end{table*}
+
+We used 10 inference runs ($n=10$) for uncertainty estimation using MCD. Correspondingly, we used 10 training runs for uncertainty estimation using ensembles. We compared results for multiple uncertainty metrics and selected the best overall performing metric. For the evidential learning method, which requires a single inference run to produce uncertainty map, we repeated the experiment 10 times and present results for the average values, as well as the worst and best scenarios with respect to $F_{1_{low}}$. 
+We present entropy from a single inference run for comparison purposes, where we also present results for the averaged values, along with the worst and best performing single inference run from 10 repetitions, with respect to $F_{1_{low}}$. % Additionally, we quantified the amount of effort required from the expert auditors using our methodology in terms of polygon count. Numerical results correspond to the average of 10 training repetitions in each case. 
+Experiments were carried out in an NVIDIA RTX 2080 Ti GPU.  
+
+
+
+
+\section{Results}
+\label{sec:results}
+% In this section, results are presented for each site individually and then 
+
+In Subsections \ref{sec:results_uncertainty_PA} and \ref{sec:results_uncertainty_MT}, we present results for the proposed methodology PA and MT study areas, respectively. In Subsection \ref{sec:results_polygon}, we present a polygon analysis which attempts to better understand the auditing effort.
+
+% \subsection{Classification and Uncertainty Estimation Results}
+
+
+
+\subsection{Uncertainty Estimation Results in PA Site}\label{sec:results_uncertainty_PA}
+
+
+\begin{table*}[ht!]
+\centering
+\caption{Uncertainty results for PA site training and testing in [2018, 2019]. $AA=3\%$. First, second and third best results in terms of $F_{1_{low}}$ are highlighted in \textcolor{red}{\textbf{red}}, \textcolor{blue}{\textbf{blue}} and \textcolor{teal}{\textbf{green}} respectively}  % . Train date: [2018, 2019]. Test date: [2018, 2019]. 
+\begin{tabular}{c|c|c|ccc}
+\hline
+\textbf{Method}             & \textbf{Uncertainty Metric} & \textbf{$F_1$}                    & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+\multirow{4}{*}{MCD} & Predictive Entropy          & \multirow{4}{*}{84.1}          & 95.3            & 61.0             & 96.9              \\
+                            & Predictive Variance         &                                & 90.9            & 77.5             & 96.2              \\
+                            & Mutual Information          &                                & 88.2            & 34.0             & 89.3              \\
+                            & Expected KL                 &                                & 87.2            & 26.7             & 88.0              \\ \hline
+\multirow{4}{*}{Ensemble}   & Predictive Entropy          & \multirow{4}{*}{\textcolor{blue}{\textbf{85.8}}} & \textcolor{blue}{\textbf{96.9}}   & \textcolor{blue}{\textbf{62.3}}    & \textcolor{blue}{\textbf{97.9}}     \\
+                            & Predictive Variance         &                                & \textcolor{teal}{\textbf{95.6}}            & \textcolor{teal}{\textbf{72.3}}             & \textcolor{teal}{\textbf{97.5}}              \\
+                            & Mutual Information          &                                & 92.2            & 31.3             & 93.1              \\
+                            & Expected KL                 &                                & 90.9            & 25.6             & 91.7              \\ \hline
+\multirow{2}{*}{Single run} & Entropy (Worst)             & 83.4                           & 94.1            & 66.7             & 96.5              \\  
+                            & Entropy (Best)              & \textcolor{red}{\textbf{87.4}}                           & \textcolor{red}{\textbf{97.0}}            & \textcolor{red}{\textbf{74.7}}             & \textcolor{red}{\textbf{98.3}}              \\ \hline
+
+\end{tabular}
+\label{tab:PA_results_t1}
+\end{table*}
+
+
+
+\begin{table*}[ht!]
+\centering
+\caption{Uncertainty results for PA site training in [2017, 2018] and testing in [2018, 2019]. $AA=3\%$. First, second and third best results in terms of $F_{1_{low}}$ are highlighted in \textcolor{red}{\textbf{red}}, \textcolor{blue}{\textbf{blue}} and \textcolor{teal}{\textbf{green}} respectively}  
+\begin{tabular}{c|c|c|ccc}
+\hline
+\textbf{Method}             & \textbf{Uncertainty Metric} & \textbf{$F_1$}                    & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+\multirow{4}{*}{MCD} & Predictive Entropy          & \multirow{4}{*}{\textcolor{teal}{\textbf{78.0}}}          & \textcolor{teal}{\textbf{92.0}}            & \textcolor{teal}{\textbf{60.3}}             & \textcolor{teal}{\textbf{96.0}}              \\
+                            & Predictive Variance         &                                & 84.8            & 73.7             & 95.0              \\
+                            & Mutual Information          &                                & 86.0            & 34.2             & 88.6              \\
+                            & Expected KL                 &                                & 84.6            & 29.4             & 87.0              \\ \hline
+\multirow{4}{*}{Ensemble}   & Predictive Entropy          & \multirow{4}{*}{\textcolor{blue}{\textbf{81.4}}} & \textcolor{blue}{\textbf{94.4}}   & \textcolor{blue}{\textbf{63.9}}    & \textcolor{blue}{\textbf{97.2}}     \\
+                            & Predictive Variance         &                                & 91.7            & 72.8             & 96.6              \\
+                            & Mutual Information          &                                & 90.7            & 46.6             & 93.3              \\
+                            & Expected KL                 &                                & 88.5            & 38.7             & 90.8              \\ \hline
+\multirow{2}{*}{Confidence} & Entropy (Worst)             & 74.5                           & 83.5            & 52.4             & 89.0              \\
+                            & Entropy (Best)              & \textcolor{red}{\textbf{84.9}}                           & \textcolor{red}{\textbf{94.9}}            & \textcolor{red}{\textbf{68.0}}             & \textcolor{red}{\textbf{97.1}}              \\ \hline
+\end{tabular}
+\label{tab:PA_results_t0}
+\end{table*}
+
+
+\begin{table*}[ht!]
+\centering
+\caption{Uncertainty results for MT site training and testing in [2019, 2020]. $AA=3\%$. First, second and third best results in terms of $F_{1_{low}}$ are highlighted in \textcolor{red}{\textbf{red}}, \textcolor{blue}{\textbf{blue}} and \textcolor{teal}{\textbf{green}} respectively}  % . Train date: [2018, 2019]. Test date: [2018, 2019]. 
+\begin{tabular}{c|c|c|ccc}
+\hline
+\textbf{Method}             & \textbf{Uncertainty Metric} & \textbf{$F_1$}                    & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+\multirow{4}{*}{MCD} & Predictive Entropy          & \multirow{4}{*}{79.2}          & 91.7            & 57.7             & 94.8              \\
+                            & Predictive Variance         &                                & 92.2            & 64.0             & 95.9              \\
+                            & Mutual Information          &                                & 89.3            & 43.3             & 92.0              \\
+                            & Expected KL                 &                                & 87.8            & 39.4             & 90.4              \\ \hline
+\multirow{4}{*}{Ensemble}   & Predictive Entropy          & \multirow{4}{*}{\textcolor{blue}{\textbf{81.4}}} & \textcolor{teal}{\textbf{94.1}}            & \textcolor{teal}{\textbf{63.8}}             & \textcolor{teal}{\textbf{96.6}}              \\
+                            & Predictive Variance         &                                & \textcolor{blue}{\textbf{95.1}}   & \textcolor{blue}{\textbf{69.0}}    & \textcolor{blue}{\textbf{97.7}}     \\
+                            & Mutual Information          &                                & 93.5            & 61.4             & 96.0              \\
+                            & Expected KL                 &                                & 93.1            & 60.3             & 95.6              \\ \hline
+\multirow{2}{*}{Confidence} & Entropy (Worst)             & 78.6                           & 84.7            & 66.4             & 89.8              \\
+                            & Entropy (Best)              & \textcolor{red}{\textbf{83.0}}                           & \textcolor{red}{\textbf{95.3}}            & \textcolor{red}{\textbf{66.2}}             & \textcolor{red}{\textbf{97.3}}              \\ \hline
+\multirow{2}{*}{Evidential} & Evidential (Worst)             & 78.6                           & 84.7            & 66.4             & 89.8              \\
+                            & Evidential (Best)              & \textcolor{red}{\textbf{83.0}}                           & \textcolor{red}{\textbf{95.3}}            & \textcolor{red}{\textbf{66.2}}             & \textcolor{red}{\textbf{97.3}}              \\ \hline                            
+\end{tabular}
+\label{tab:MT_results_t1}
+\end{table*}
+
+
+\begin{table*}[ht!]
+\centering
+\caption{Uncertainty results for MT site training in [2018, 2019] and testing in [2019, 2020]. $AA=3\%$. First, second and third best results in terms of $F_{1_{low}}$ are highlighted in \textcolor{red}{\textbf{red}}, \textcolor{blue}{\textbf{blue}} and \textcolor{teal}{\textbf{green}} respectively}
+\begin{tabular}{c|c|c|ccc}
+\hline
+\textbf{Method}             & \textbf{Uncertainty Metric} & \textbf{$F_1$}                    & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+\multirow{4}{*}{MCD} & Predictive Entropy          & \multirow{4}{*}{77.4}          & 90.2            & 54.4             & 94.3              \\
+                            & Predictive Variance         &                                & 83.7            & 70.4             & 92.4              \\
+                            & Mutual Information          &                                & 81.8            & 39.9             & 83.8              \\
+                            & Expected KL                 &                                & 79.9            & 32.5             & 81.3              \\ \hline
+\multirow{4}{*}{Ensemble}   & Predictive Entropy          & \multirow{4}{*}{\textcolor{red}{\textbf{81.0}}} & \textcolor{red}{\textbf{93.8}}   & \textcolor{red}{\textbf{63.0}}    & \textcolor{red}{\textbf{96.7}}     \\
+                            & Predictive Variance         &                                & \textcolor{teal}{\textbf{92.6}}            & \textcolor{teal}{\textbf{71.0}}             & \textcolor{teal}{\textbf{96.9}}              \\
+                            & Mutual Information          &                                & 92.3            & 59.7             & 95.4              \\
+                            & Expected KL                 &                                & 91.7            & 56.6             & 94.8              \\ \hline
+\multirow{2}{*}{Confidence} & Entropy (Worst)             & 72.9                           & 87.0            & 58.7             & 94.3              \\
+                            & Entropy (Best)              & \textcolor{blue}{\textbf{78.9}}                           & \textcolor{blue}{\textbf{92.8}}            & \textcolor{blue}{\textbf{55.6}}             & \textcolor{blue}{\textbf{96.1}}              \\ \hline
+\end{tabular}
+\label{tab:MT_results_t0}
+\end{table*}
+% which would represent a correction of 91.3\% of the network's errors on the test set
+ Table \ref{tab:PA_results_t1} presents results when training and testing on the same date pair, which is a common procedure in recent works \cite{ortega2021comparison}. Among the multiple-outcome approaches, the best performing method was Ensemble with an $F_1$ score of 85.8. The reason for its improvement over MCD might be related to using the entire network at each inference pass, without using dropout at inference. As a baseline comparison, we present results for using entropy from a single inference run. Since we repeated this experiment 10 times, we show the worst and best performing cases. Results presented a high variance. Although the best case scenario produced results slightly better compared to Ensemble in terms of $F_{1_{low}}$, results from single inference run, the high variance in results from a single inference run make it unreliable compared to the more robust MCD and Ensemble methods.
+
+We also present results for multiple uncertainty metrics in MCD and Ensemble approaches. In both cases, the best performing metric was predictive entropy, with increases in $F_{1_{low}}$ of up to 8.1\% compared to the other metrics. Predictive variance was the second best metric in both MCD and Ensemble. 
+
+
+In the case of the best performing multiple-output method (Ensemble) and the best metric (Predictive entropy), we obtained an average $F_1$ score of 85.8. After applying the proposed uncertainty-based methodology, for an Audit Area (AA) of 3\%, we obtained an increased $F_1$ of 96.9 for the samples with low uncertainty, while $F_{1_{high}}$ was much lower (62.3), which indicates that our methodology succeeded in separating the samples that we can trust from the samples that we don't know if they are correct. If we audited the samples with high uncertainty, we would obtain a $F_{1_{audit}}$ of 97.9, with a significantly smaller auditing effort (3\% of the image) compared to the current auditing procedure, where 100\% of the image needs to be audited. Figure \ref{fig:PA_audit_results_t1} presents results for different uncertainty threshold values in the PA site when training and testing in the same date pair, corresponding to a range of AA from 0\% to about 10\%. Results correspond to the best performing multiple-output method and the corresponding best uncertainty metric. $F_1$ before applying the uncertainty methodology is presented in yellow for comparison. $F_{1_{low}}$ increased when increasing AA until a peak value for an AA of approximately 5\%, where its value started to decline. This suggests that the uncertainty threshold needs to be adequately selected to obtain the desired outcomes in the proposed methodology. In contrast, $F_{1_{audit}}$ increased monotonically when increasing AA. Both $F_{1_{low}}$ and $F_{1_{audit}}$ got close to 100\% even for small values of AA. 
+
+Figure \ref{fig:PA_audit_results_t0} presents results for different uncertainty thresholds in the PA site in the more operational case of training with a past date and testing on an upcoming date. In this case, $F_{1_{low}}$ and $F_{1_{audit}}$ increased monotonically when increasing AA, as expected. Compared to $F_1$ before applying the uncertainty methodology, $F_{1_{low}}$ and $F_{1_{audit}}$ were significantly higher even for small values of AA. 
+
+\iffalse
+\begin{table*}[ht!]
+\caption{Uncertainty results for PA site. $AA=3\%$} %  using past dates and inferring un unseen date
+\centering
+\begin{tabular}{c|c|c|ccc}
+\hline
+\textbf{Train date}             & \textbf{Test date} & \textbf{$F_1$} & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+$[T_{-1}, T_0]$                       & $[T_{-1}, T_0]$          & 84.1        & 95.3                 & 61.0                  & 96.9                                         \\
+$[T_{-2}, T_{-1}]$                       & $[T_{-1}, T_0]$          & 78.3        & 91.5                 & 60.8                  & 95.7                                         \\ \hline
+\end{tabular}
+\label{tab:PA_uncertainty}
+\end{table*}
+\fi
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[scale=0.45]{figures/4-Experimental/PA/recall_precision_f1_AA_current_date.png}
+\caption{Classification metrics for multiple uncertainty threshold values in PA site. Training and testing in [2018, 2019]. Uncertainty method: Ensemble. Uncertainty metric: Predictive Entropy. A sample AA threshold of 3\% is highlighted in \textcolor[HTML]{333333}{gray}.}
+\label{fig:PA_audit_results_t1}
+\end{figure*}
+
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[scale=0.45]{figures/4-Experimental/PA/recall_precision_f1_AA.png}
+\caption{Classification metrics for multiple uncertainty threshold values in PA site. Training in [2017, 2018] and testing in [2018, 2019]. Uncertainty method: Ensemble. Uncertainty metric: Predictive Entropy. A sample AA threshold of 3\% is highlighted in \textcolor[HTML]{333333}{gray}.}
+\label{fig:PA_audit_results_t0}
+\end{figure*}
+
+\begin{figure*}[ht!]
+  \centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=1.\linewidth]{figures/4-Experimental/PA/PAMultipleDatesPredictSampleUncertainty2.png} \\[\abovecaptionskip]
+    % \small (a) Error areas presented high uncertainty
+  \end{tabular}
+
+  % \vspace{0.5\floatsep}
+  \vspace*{-0.5\baselineskip}
+  
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=1.\linewidth]{figures/4-Experimental/PA/PAMultipleDatesPredictSampleUncertainty1.png} \\[\abovecaptionskip]
+    % \small (b) Correct areas presented low uncertainty
+  \end{tabular}
+  \vspace*{-0.5\baselineskip}
+  
+  \begin{tabular}{@{}c@{}}
+    % \vspace{-3.5\floatsep}
+    \includegraphics[width=1.\linewidth]{figures/4-Experimental/PA/colormap.png} \\[\abovecaptionskip]
+    % \small (b) Correct areas presented low uncertainty
+  \end{tabular}
+
+s  \caption{Qualitative results for PA site. Each row represents a snippet from the test areas. Training in [2017, 2018] and testing in [2018, 2019].}\label{fig:PAqualitative}
+\end{figure*}
+
+Figure \ref{fig:PAqualitative} presents qualitative results for the operational scenario where we trained on a past date pair and tested on a new upcoming date pair. In each row we have the optical $T_0$ image, where deforestation has already occurred, followed by the predict probability, the prediction result (White and black for non-deforestation and deforestation, blue and orange for false positive and true positive errors), and the uncertainty estimation map. We can observe that error areas presented high uncertainty values, while correctly classified areas presented low uncertainty values, with the exception of borders surrounding the correctly classified deforestation polygons, which also presented a high uncertainty value. Such borders were expected to present high uncertainty, and the result is consistent with the PRODES protocol, which ignores pixels within a 2-pixel-wide range at the inner and outer boundaries of deforestation polygons. In the second row we see a fail case for the proposed methodology, with a small false negative region presenting low uncertainty values.
+
+The results in Table \ref{tab:PA_results_t0} correspond to training with date pairs from the past and inferring on a new date unseen during training, representing a more realistic operational setting. In this case, the best multiple-output uncertainty method was also Ensemble and the best performing uncertainty metric was also the predictive entropy.
+
+In terms of $F_1$, results were comparable to the upper bound case of training and testing in the same date, with an $F_1$ of 81.4. For an Audit Area (AA) of 3.0\%, $F_{1_{low}}$ improved to 94.4, while $F_{1_{high}}$ was 63.9, which indicates that the proposed uncertainty methodology was also capable of discerning between samples we can trust and samples we don't know if they are correct in the case of training with past date pairs and inferring on a new upcoming date. If we audited the high uncertainty samples, we could get an $F_{1_{audit}}$ of 97.2, which is close to what we obtained in the ideal case of training and testing on the same date, with a slight difference of 0.7\%. 
+
+In this case, entropy results from a single inference run were similar to the Ensemble approach, with the best run being 0.1\% lower in terms of $F_{1_{audit}}$, which indicated that the robustness from Ensemble was more relevant in the more challenging scenario when training and testing in different dates.
+
+
+\iffalse
+\begin{table*}[ht!]
+\caption{Uncertainty results for MT site. $AA=3\%$}
+\centering
+\begin{tabular}{c|c|c|ccc}
+\hline
+\textbf{Train date}             & \textbf{Test date} & $F_1$ & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+$[T_{-1}, T_0]$                       & $[T_{-1}, T_0]$          & 79.2        & 91.7                 & 57.7                  & 94.8                                       \\
+$[T_{-2}, T_{-1}]$                       & $[T_{-1}, T_0]$          & 77.8        & 90.4                 & 54.1                  & 94.4                                         \\ \hline
+\end{tabular}
+\label{tab:MT_uncertainty}
+\end{table*}
+\fi
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[scale=0.45]{figures/4-Experimental/MT/recall_precision_f1_AA_current_date.png}
+\caption{Classification metrics for multiple uncertainty threshold values in MT site. Training and testing in [2019, 2020]. Uncertainty method: Ensemble. Uncertainty metric: Predictive Variance. A sample AA threshold of 3\% is highlighted in \textcolor[HTML]{333333}{gray}.}
+\label{fig:MT_audit_results_t1}
+\end{figure*}
+
+
+\begin{figure*}[ht!]
+\centering
+\includegraphics[scale=0.45]{figures/4-Experimental/MT/recall_precision_f1_AA.png}
+\caption{Classification metrics for multiple uncertainty threshold values in MT site. Training in [2017, 2018] and testing in [2018, 2019]. Uncertainty method: Ensemble. Uncertainty metric: Predictive Entropy. A sample AA threshold of 3\% is highlighted in \textcolor[HTML]{333333}{gray}.}
+\label{fig:MT_audit_results_t0}
+\end{figure*}
+
+\begin{figure*}[ht!]
+  \centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=1.\linewidth]{figures/4-Experimental/MT/MTMultipleDatesPredictSampleUncertainty2.png} \\[\abovecaptionskip]
+    % \small (a) Error areas presented high uncertainty
+  \end{tabular}
+
+  % \vspace{0.5\floatsep}
+  \vspace*{-0.5\baselineskip}
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=1.\linewidth]{figures/4-Experimental/MT/MTMultipleDatesPredictSampleUncertainty1.png} \\[\abovecaptionskip]
+    % \small (b) Correct areas presented low uncertainty
+  \end{tabular}
+  \vspace*{-0.5\baselineskip}
+  
+  \begin{tabular}{@{}c@{}}
+    % \vspace{-3.5\floatsep}
+    \includegraphics[width=1.\linewidth]{figures/4-Experimental/PA/colormap.png} \\[\abovecaptionskip]
+    % \small (b) Correct areas presented low uncertainty
+  \end{tabular}
+  \caption{Qualitative results for MT site. Each row represents a snippet from the test areas. Training in [2018, 2019] and testing in [2019, 2020].}\label{fig:MTqualitative}
+\end{figure*}
+
+
+\subsection{Uncertainty Estimation Results in MT Site}\label{sec:results_uncertainty_MT}
+
+Table \ref{tab:MT_results_t1} presents classification results for MT site in the traditional scenario, where the network is trained and tested on the same date. As in the PA site, the best multiple-output uncertainty method was Ensemble, with an increase of 3.6\% $F_1$ compared to MCD. In this case, the best uncertainty metric was the predictive variance in terms of $F_{1_{low}}$ and $F_{1_{audit}}$.  For the Ensemble method and the predictive variance metric, applying the proposed uncertainty methodology, for an AA of 3\%, the $F_{1_{low}}$ improved to 91.7, while $F_{1_{high}}$ produced a significantly lower value, indicating that the methodology was able to separate between predictions we can trust and predictions that the network doesn't know, similarly to PA. If we audited the samples with high uncertainty, we could get a $F_{1_{audit}}$ of 94.8 with minimal auditing effort. Consistently with the PA site, entropy from a single inference run produced results with high variance, with the worst case scenario being 7\% lower compared to MCD and the best outcome 0.2\% higher compared to Ensemble in terms of $F_{1_{low}}$. Such result suggests that using a single inference run may be less reliable and robust compared to the MCD and Ensemble approaches.
+
+
+Table \ref{tab:MT_results_t0} presents results in a more challenging scenario, which is closer to a real operational setting, for the MT site. As in PA, we trained on an image pair from past dates $[T_{-1}, T_0] = [2018, 2019]$ and tested on a new upcoming date $[T_{-1}, T_0] = [2019, 2020]$.  Results were similar to previous experiments, with Ensemble producing the best results compared to MCD. The best performing uncertainty metric was the predictive entropy. In this operational setting, with the best performing approach we obtained an $F_1$ of 81.0, which represented a minor drop of 0.4\% compared to the ideal case of training and testing on the same date pair. 
+
+Using our proposed methodology to aid the auditing process, for an AA of 3\%, we obtained $F_{1_{low}}$ of 93.8, with a much lower $F_{1_{high}}$, which reinforces our initial hypothesis that uncertainty estimation can help us separate the samples we can trust from the samples the network doesn't know if they are correct. After auditing the high uncertainty samples, we could get an $F_{1_{audit}}$ of 96.7, which is close to the ideal case where we trained and tested on the same date pair. These results were consistent with the ones from PA site.
+
+In the more operational setting of training and testing with different dates, results for entropy from a single inference run were worse compared to MCD and Ensemble methods, even for the best performing case. This reinforces the hypothesis that the robustness from multiple-inference approaches was more critical in the operational case.
+
+In Figures \ref{fig:MT_audit_results_t1} and \ref{fig:MT_audit_results_t0} we present the classification metrics for multiple uncertainty threshold values when training and testing in the same date and when training and testing in different dates, respectively. These results correspond to the best performing approach in each case. We present $F_1$ before applying the uncertainty methodology in yellow for comparison. We observe a similar behavior to PA site, with $F_{1_{low}}$ and $F_{1_{audit}}$ increasing when increasing AA. The auditor might select a low AA such as 3\% and still get high $F_1$ values, or use a more conservative approach and select a higher AA with correspondingly higher $F_1$ metrics.
+
+Figure \ref{fig:MTqualitative} presents qualitative results for the MT site in the scenario where we trained on a past date pair [2018, 2019] and tested on an upcoming date pair [2019, 2020]. In each row, a snippet from the test area is presented. In the classification predictions, white and black represent correctly classified non-deforestation and deforestation classes, while blue and orange represent false positive and true positive errors. The first snippet corresponds to a region with a significant amount of false negative errors. The uncertainty map produced high values in the error areas, while it produced lower values in the correctly classified regions, indicating its potential to detect areas which need to be revised by an auditing expert. In the second snippet, a region with almost no classification errors produced generally low uncertainty values, with the exception of border areas surrounding deforestation polygons as in PA, as expected.
+
+
+
+\subsection{Polygon Analysis}\label{sec:results_polygon}
+
+So far, we presented pixel-level results. However, auditing experts usually work with polygons instead of individual pixels. In this section, we analyze the produced uncertainty map in terms of uncertainty polygon count, which represents the auditing effort. Uncertainty polygons were obtained by applying a specific threshold to the uncertainty metric value for each pixel location. In this analysis, we applied an uncertainty threshold corresponding to $AA=3\%$. The total count of uncertainty polygons for PA site was 13713. To reduce the effort in the auditing process, we hypothesize that the auditor could start considering the largest uncertainty polygons, and account for most of the auditing process without the need to consider the smallest polygons, which correspond to the majority of uncertainty polygons. 
+
+In Figure \ref{fig:PA_polygon_analysis}, we present results for polygon analysis in PA. In the horizontal axis, we grouped the uncertainty polygons by their individual polygon size. In Figure \ref{fig:PA_polygon_analysis}(a), we present the number of polygons for different values of polygon size. We observe that the vast majority of polygons (92.3\%) have an individual polygon size in the smallest horizontal bin, which corresponds to polygons with an individual size lower than 625 pixels. Such small polygons might not be of use for auditors, considering that the annotation protocol from PRODES ignores polygons with an area lower than $6.25ha$, corresponding to 625 pixels. If we ignore such small polygons, we would be left with 1058 uncertainty polygons, which might be more convenient for the experts to audit. Figure \ref{fig:PA_polygon_analysis}(b) presents in blue the accumulated area for each polygon size bin, and in red the cumulative area counting from the largest polygon size on the right to the smallest on the left. The cumulative area does not start from 0\% because there are some polygons with size larger than the figure limits. If we dropped the uncertainty polygons in the smallest bin, which are too small for auditors to consider, we would reduce the amount of uncertainty polygons to be audited from 13719 to 1058, while retaining 78.1\% of the uncertainty area. 
+Figure \ref{fig:MT_polygon_analysis} presents results for polygon analysis in MT site. In this case, the total count of uncertainty polygons was 12320. As in the PA site, if we removed the uncertainty polygons with an area lower than $6.25ha$, we would reduce their count to 703 polygons, while retaining 82.7\% of the uncertainty area. 
+
+% from the largest polygon size on the right to the smallest on the left
+
+% \end{figure*}
+\begin{figure*}
+  \centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[scale=0.4]{figures/4-Experimental/PA/polygon_analysis_percentage_split1.png} \\[\abovecaptionskip]
+    \small (a) Number of polygons for different values of individual polygon size
+  \end{tabular}
+
+  \vspace{\floatsep}
+
+  \begin{tabular}{@{}c@{}}
+    \hspace*{28pt}\includegraphics[scale=0.4]{figures/4-Experimental/PA/polygon_analysis_percentage_split2.png} \\[\abovecaptionskip]
+    \small (b) Bin area percentage in blue, and cumulative area percentage in red, \\ for different values of individual polygon size
+  \end{tabular}
+
+  \caption{Polygon analysis for PA site.}\label{fig:PA_polygon_analysis}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[scale=0.4]{figures/4-Experimental/MT/polygon_analysis_percentage_split1.png} \\[\abovecaptionskip]
+    \small (a) Number of polygons for different values of individual polygon size
+  \end{tabular}
+
+  \vspace{\floatsep}
+
+  \begin{tabular}{@{}c@{}}
+    \hspace*{20pt}\includegraphics[scale=0.4]{figures/4-Experimental/MT/polygon_analysis_percentage_split2.png} \\[\abovecaptionskip]
+    \small (b) Bin area percentage in blue, and cumulative area percentage in red, \\ for different values of individual polygon size
+  \end{tabular}
+
+  \caption{Polygon analysis for MT site.}\label{fig:MT_polygon_analysis}
+\end{figure*}
+
+\iffalse
+\subsection{Varying Inference Times}\label{sec:results_inference_times}
+
+To assess the influence of varying the amount of inference times, we evaluated the proposed approach for $n=[1, 5, 10, 30, 50]$. Tables \ref{tab:PA_inference_runs} and \ref{tab:MT_inference_runs} show results for PA and MT study areas. In general, results were similar for all values of $n>1$. However, for $n=1$ there was a drop of up to 0.9\% in classification metrics without considering uncertainty ($F_1$). This was consistent with a drop of up to  2.1\% in $F_{1_{low}}$ and 1.2\% in $F_{1_{audit}}$. Thus, the results indicated that $n\geq 5$ produced improvements in the outcomes of the uncertainty methodology. Furthermore, using $n=1$ resulted in larger performance drops for MT site compared to PA site, which indicated that the use of multiple inference runs was more useful for sites with a lower absolute performance.
+
+\begin{table}[ht!]
+\caption{Results for varying $N$ in PA site. $AA=3\%$} %  using past dates and inferring un unseen date
+\centering
+\begin{tabular}{c|c|ccc}
+\hline
+\textbf{$n$} & \textbf{$F_1$} & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+1          & 84.3        & 94.5                 & 63.1                  & 96.4                     \\
+5          & 84.5        & 95.3                 & 62.3                  & 96.9                     \\
+10          & 84.5        & 95.4                 & 61.7                  & 97.0                     \\
+30          & 84.3        & 95.5                 & 60.9                  & 97.0                     \\
+50          & 84.3        & 95.5                 & 61.0                  & 97.0                     \\ \hline
+
+\end{tabular}
+\label{tab:PA_inference_runs}
+\end{table}
+
+
+\begin{table}[ht!]
+\caption{Results for varying $N$ in MT site. $AA=3\%$} %  using past dates and inferring un unseen date
+\centering
+\begin{tabular}{c|c|ccc}
+\hline
+\textbf{$n$} & \textbf{$F_1$} & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+1          & 78.9        & 89.5                 & 60.7                  & 93.5                     \\
+5          & 79.8        & 91.6                 & 58.8                  & 94.7                     \\
+10          & 79.8        & 91.4                 & 58.8                  & 94.6                     \\
+30          & 79.6        & 91.5                 & 58.1                  & 94.7                     \\
+50          & 79.6        & 91.5                 & 58.1                  & 94.7                     \\ \hline
+
+\end{tabular}
+\label{tab:MT_inference_runs}
+\end{table}
+\fi
+\iffalse
+\subsection{Comparison of Uncertainty Metrics}\label{sec:results_metrics}
+
+We compared the proposed uncertainty methodology for multiple uncertainty metrics. Table \ref{tab:PA_uncertainty_metrics} presents results for PA site. In this case, the best metric was predictive entropy, with increases in $F_{1_{low}}$ of up to 8.1\% compared to the other metrics. Predictive variance was the second best metric. Table \ref{tab:MT_uncertainty_metrics} presents results for MT site. In this case, the best metrics were predictive variance and predictive entropy, with the former having slightly better results in $F_{1_{low}}$ and the latter being better in $F_{1_{audit}}$. Overall, the most consistent metric across study areas was predictive entropy.
+
+
+
+\begin{table}[ht!]
+\caption{Results for multiple uncertainty metrics in PA site. $AA=3\%$} 
+\centering
+\begin{tabular}{c|c|ccc}
+\hline
+\textbf{Metric}     & \textbf{$F_1$} & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+Predictive Entropy  & \multirow{3}{*}{84.1} & 95.3                 & 61.0                  & 96.9                     \\
+Predictive Variance &                       & 90.9                 & 77.5                  & 96.2                   \\
+Mutual Information  &                       & 88.2                 & 34.0                  & 89.3                   \\
+Expected KL  &                       & 87.2                 & 26.7                  & 88.0                   \\ \hline
+\end{tabular}
+\label{tab:PA_uncertainty_metrics}
+\end{table}
+
+\begin{table}[ht!]
+\caption{Results for multiple uncertainty metrics in MT site. $AA=3\%$} 
+\centering
+\begin{tabular}{c|c|ccc}
+\hline
+\textbf{Metric}     & \textbf{$F_1$} & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+Predictive Entropy  & \multirow{3}{*}{79.2} & 91.7                 & 57.7                  & 94.8                     \\
+Predictive Variance &                       & 92.2                 & 64.0                  & 95.9                   \\
+Mutual Information  &                       & 89.3                 & 43.3                  & 92.0                   \\
+Expected KL  &                       & 87.8                 & 39.4                  & 90.4                   \\ \hline
+\end{tabular}
+\label{tab:MT_uncertainty_metrics}
+\end{table}
+\fi
+
+\iffalse
+\textcolor{red}{\subsection{Comparison of Uncertainty Estimation Methods}\label{sec:results_methods}}
+
+\textcolor{red}{The main advantage of MCD is that it only requires training the network one time, due to its ability to produce different outcomes at inference using the same network. In this section, we compared MCD with an ensemble-based approach as an alternative uncertainty estimation method, where we trained a number $n$ of networks with random weight initialization and computed the predictive entropy as uncertainty metric over the inference runs from those networks.} 
+
+\textcolor{red}{Tables \ref{tab:PA_comparison} and \ref{tab:MT_comparison} present results for both uncertainty methods in PA and MT sites. In general, the ensemble-based approach produced improvements in all cases, with increases in $F_{1_{low}}$ and $F_{1_{audit}}$ of up to 3.4\% and 1.5\% respectively. The highest improvements were obtained when training with a past date pair $[T_{-2}, T_{-1}]$ and testing on the current date pair $[T_{-1}, T_0]$. Although the ensemble approach produced significant gains, its computational cost is $n$ times larger during training compared to MCD.}
+
+
+
+\begin{table*}[ht!]
+\caption{Comparison of Uncertainty Methods for PA site. $AA=3\%$}
+\centering
+\begin{tabular}{c|cc|c|ccc}
+\hline
+\textbf{Method}             & \textbf{Train  date} & \textbf{Test date} & $F_1$ & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+\multirow{2}{*}{MCD} & $[T_{-1}, T_0]$                   & $[T_{-1}, T_0]$                 & 84.1        & 95.3                 & 61.0                  & 96.9                     \\
+                            & $[T_{-2}, T_{-1}]$                   & $[T_{-1}, T_0]$                 & 78.3        & 91.5                 & 60.8                  & 95.7                   \\ \hline
+\multirow{2}{*}{Ensemble}   & $[T_{-1}, T_0]$                   & $[T_{-1}, T_0]$                 & 85.8        & 96.9                 & 62.4                  & 97.9                   \\
+                            & $[T_{-2}, T_{-1}]$                   & $[T_{-1}, T_0]$                 & 81.4        & 94.5                 & 64.0                  & 97.2                  
+\end{tabular}
+\label{tab:PA_comparison}
+\end{table*}
+
+
+\begin{table*}[ht!]
+\caption{Comparison of Uncertainty Methods for MT site. $AA=3\%$}
+\centering
+\begin{tabular}{c|cc|c|ccc}
+\hline
+\textbf{Method}             & \textbf{Train  date} & \textbf{Test date} & $F_1$ & \textbf{$F_{1_{low}}$} & \textbf{$F_{1_{high}}$} & \textbf{$F_{1_{audit}}$} \\ \hline
+\multirow{2}{*}{MCD} & $[T_{-1}, T_0]$                   & $[T_{-1}, T_0]$                 & 79.2        & 91.7                 & 57.7                  & 94.8                     \\
+                            & $[T_{-2}, T_{-1}]$                   & $[T_{-1}, T_0]$                 & 77.8        & 90.4                 & 54.1                  & 94.4                   \\ \hline
+\multirow{2}{*}{Ensemble}   & $[T_{-1}, T_0]$                   & $[T_{-1}, T_0]$                 & 81.4        & 94.1                 & 63.8                  & 96.6                   \\
+                            & $[T_{-2}, T_{-1}]$                   & $[T_{-1}, T_0]$                 & 81.0        & 93.8                 & 63.1                  & 96.7                  
+\end{tabular}
+\label{tab:MT_comparison}
+\end{table*}
+\fi
+
+
+
+% Error areas presented high uncertainty, and correct areas presented low uncertainty
+
+
+% \begin{figure}[h!]
+% \centering
+% \includegraphics[scale=0.4]{figures/4-Experimental/PA/qualitative_PA.png}
+% \caption{Residual block with dropout.}
+% \label{residual_block}
+% \end{figure}
+
+% \begin{table*}[]
+% \centering
+% \begin{tabular}{c|c|cccc}
+% \hline
+% \textbf{Train date}             & \textbf{Test date} & \textbf{mAP} & \textbf{$F_1$} & \textbf{Precision} & \textbf{Recall} \\ \hline
+% 2018-2019                       & 2018-2019          & 91.2         & 82.7        & 81.3               & 84.1            \\
+% 2015-2016, 2016-2017, 2017-2018 & 2018-2019          & 88.6         & 80.5        & 91.1               & 72.0            \\
+% 2016-2017, 2017-2018            & 2018-2019          & 86.7         & 78.3        & 87.9               & 70.5            \\
+% 2017-2018                       & 2018-2019          & 85.7         & 77.2        & 82.6               & 72.5            \\ \hline
+% \end{tabular}
+% \end{table*}
+
+
+
+
+
+% \begin{figure}[h!]
+% \centering
+% \includegraphics[scale=0.4]{figures/4-Experimental/MT/MTResUnet uncertainty predictive entropy.png}
+% \caption{Residual block with dropout.}
+% \label{residual_block}
+% \end{figure}
+
+%%\subsection{Polygon Analysis}
+
+%%So far, we presented pixel-level results. However, the auditing experts usually work with polygons instead of individual pixels. In this section, we analyze the produced uncertainty map in terms of uncertainty polygon count, which represents the auditing effort. The total count of uncertainty polygons for PA site was 17296. In Figure \ref{fig:PA_polygon_analysis}, we present results for polygon analysis in PA. In yellow, we present the number of polygons for multiple individual polygon size in pixels. We observe that the vast majority of polygons (94\%) have an individual polygon size smaller than 625 pixels. Such small polygons might not be of use for auditors, considering that the annotation protocol from PRODES ignores polygons with an area lower than $6.25ha$, corresponding to 625 pixels. If we dropped such small polygons, we would be left with 1045 uncertainty polygons, which might be more convenient for the experts to audit. The figure presents in blue the accumulated area for each polygon size bin, and in red the total cumulative area counting from the largest polygon size on the right to the smallest on the left. If we dropped the uncertainty polygons in the smallest bin, which are too small for auditors to consider, we would reduce the amount of uncertainty polygons to be audited from 17296 to 1045, while retaining around 80\% of the uncertainty area. 
+%%Figure \ref{fig:MT_polygon_analysis} presents results for polygon analysis in MT site. In this case, the total count of uncertainty polygons was 26882. As in the PA site, if we removed the uncertainty polygons with an area lower than $6.25ha$, we would reduce their count to 833, while retaining around 80\% of the uncertainty area. 
+
+%%\begin{figure*}[ht!]
+%%    \centering
+%%		\includegraphics[scale=0.40]{figures/4-Experimental/PA/polygon_analysis_percentage.png}
+%%	\caption{Polygon analysis for PA site.}
+%%\label{fig:PA_polygon_analysis} % to-do: improve blocks?
+%%\end{figure*}
+
+%%\begin{figure*}[ht!]
+%%    \centering
+%%		\includegraphics[scale=0.40]{figures/4-Experimental/MT/polygon_analysis_percentage.png}
+%%	\caption{Polygon analysis for MT site.}
+%%\label{fig:MT_polygon_analysis} % to-do: improve blocks?
+%%\end{figure*}
+

@@ -1,0 +1,76 @@
+\chapter{INTRODUCTION}
+
+\section{Motivation}
+\IEEEPARstart{T}{he} Amazon Deforestation Monitoring Project (PRODES), developed and operated by the Brazilian National Space Research Institute (INPE), provides consistent annual deforestation reports since 1988 \cite{prodes}. In the current PRODES methodology, deforestation is visually inspected and manually annotated over a set of satellite images covering the entire Brazilian Amazon biome every year, which spans an area of 4 million $km^2$. Although costly and time consuming, the current PRODES methodology can be justified by the high accuracies expected for the official, authoritative deforestation figures delivered by such a program \cite{prodes,laurance2002predictors}. Similarly, secondary vegetation mapping refers to mapping the regenerated vegetation areas inside previously deforested zones. The TerraClass project \cite{almeida2016high} provides estimates of secondary vegetation mapping based on a semi-automated approach, where classification results are 100\% audited by experts.
+
+
+Nevertheless, many studies have focused on automatic deforestation detection from remote sensing imagery. Recent works used fully convolutional deep neural networks for deforestation detection, having as inputs pairs of Sentinel-2 or Landsat-8 multispectral images from consecutive years (e.g. \cite{ortega2021comparison, adarme2022multi, torres2021deforestation}). Although those works deliver considerably high accuracies, in the order of 79.6 to 81.7\% in terms of F1-Score, they do not indicate the uncertainties in their  predictions, which may be over or under confident. Some works have studied automated secondary vegetation mapping. A recent work used SAR data for secondary vegetation mapping in Brazil and Peru \cite{kiyohara2022mapping}. Although their results produced up to 84.2\% overall accuracy, they did not consider uncertainty estimation.
+
+
+Notwithstanding, multiple uncertainty estimation techniques have been proposed to date \cite{gawlikowski2021survey}. Monte Carlo Dropout (MCD) \cite{gal2016dropout} is an uncertainty estimation technique in which dropout is used at inference time to produce slightly different outcomes at each run. Thereafter, statistical measures are applied to a predefined number of inference runs. That method is particularly efficient because the deep neural network is trained only once. Another possibility is to derive uncertainty values using an ensemble of networks trained with different weight initializations, in that case, the training procedure must be carried out a number of times. A more recent alternative is evidential deep learning \cite{sensoy2018evidential}. Committee based approaches such as MCD and ensembles are computationally expensive due to the need to train or run inference multiple times. Conversely, evidential learning estimates uncertainty using a single training run and a single forward pass. It considers the predictions of a single deterministic network as a subjective opinion, and explicitly models the weight uncertainties. The aforementioned uncertainty estimation techniques generally use convolutional networks as a base models. Nevertheless, recent works have reported high semantic segmentation accuracies using vision transformers as alternatives for convolutional models \cite{ranftl2021vision,zhang2022dino}, but no uncertanty estimation research based on transformers can, however, be found in the literature thus far.
+%This research will compare uncertainty estimation techniques obtained with fully convolutional and transformer architectures.
+
+
+% evidence leading to all possible opinions
+
+% add aleatoric and model uncertainty. talk about domain shift. 
+% \cite{gawlikowski2021survey, guo2017calibration}. 
+% softmax scores produced at the output do not represent model certainty. Instead, they are normalized model scores without probabilistic meaning \cite{}.
+
+
+ % in the Brazilian Amazon. 
+In short, it is assumed that low-uncertainty predictions are more likely to be incorrect. So an uncertainty map can be used to separate the pixel-level classification outcomes into low-uncertainty and high-uncertainty predictions. The high-uncertainty predictions can then be submitted to a human specialist in an auditing procedure, in which it is expected that the respective regions are classified correctly. The basic idea is to  expressively reduce the need for human intervention in the deforestation and secondary vegetation mapping processes, while achieving very high classification accuracies. Indeed, in preliminary results for deforestation detection, the auditing process was restricted to a mere 3\% of the total area of the study areas, and, assuming that the human specialist is always right, $F_1$ scores considering the whole test areas were of up to 96.9\%.
+%, corresponding to the percentage of samples with high uncertainty. Our methodology produces high quality results, with $F_1$ score of up to 95.3 for the low uncertainty samples, and $F_1$ score of up to 96.9 if an expert auditor corrected the high uncertainty samples corresponding to 3\% of the test area. We used a fully convolutional ResUnet as a base network. 
+
+%Furthermore, recent works on deforestation detection trained and tested the networks on the same date. Instead, in this work we simulated a real-world operational application by training the network on dates from the past and making inference on a new upcoming date which was not used by the network during training. We assessed the proposed methodology in two study areas in the states of Para and Mato Grosso in the Brazilian Amazon.
+
+The above-mentioned results are obtained in a real-world operational setup, in which images and references from the past years were used for training the classifier, which was then applied to a pair of recent anniversary images. In the preliminary results for deforestation detection, two sites in the Brazilian states of Pará and Mato Grosso were selected as study areas.
+
+In conclusion, a way to exploit uncertainty estimation in the tasks of deforestation detection and secondary vegetation mapping is proposed in this work. Multiple uncertainty estimation methods will be assessed, including confidence-based approaches, MCD, ensembles and evidential learning. For the dense classificarion models, fully convolutional and transformer architecture models will be considered. Preliminary results are presented for MCD and classifier ensembles as uncertainty estimation techniques, and a ResUnet-based network as the classification model. Preliminary results refer to one of the target applications, namely deforestation detection.
+
+
+\section{Objectives}
+\subsection{General Objective}
+
+The general objective of this work is to propose a methodology that exploits uncertainty measures derived from deep learning-based semantic segmentation models, which can deliver very high accuracies in deforestation and regeneration mapping through a semi-automatic procedure that relies on little human intervention.
+
+\subsection{Specific Objectives}
+
+The specific objectives of this work are the following:
+\begin{enumerate}
+\item Propose an operational methodology that exploits uncertainty estimation in the problems of deforestation and regeneration mapping from satellite images, aiming at strongly reducing human intervention in the execution of those tasks.
+\item Evaluate uncertainty estimation methods such as confidence-based approaches, multi-output approaches and evidential learning, and compare different uncertainty metrics such as predictive entropy, predictive variance and mutual information.
+\item Propose and  transformer-based networks such as DPT \cite{ranftl2021vision}, DINO \cite{zhang2022dino} and Swin \cite{liu2021swin} as alternatives for fully convolutional models (e.g, ResUNet) in the context of the proposed methodology.
+\item Evaluate the proposed methodology in two applications: deforestation detection in the Brazilian Amazon and secondary vegetation mapping in the Brazilian Amazon and Cerrado biomes.
+
+\end{enumerate}
+
+
+
+\section{Contributions}
+
+The main contributions of this work are the following:
+\begin{enumerate}
+  \item To the best of our knowledge, this is the first work to use uncertainty estimation for deforestation detection and secondary vegetation mapping using satellite images.
+  \item Introduction of a novel uncertainty estimation approach combining transformer-based networks for semantic segmentation with state-of-the-art uncertainty estimation techniques.
+  \item Introduction of an operational methodology to aid the annotating and auditing process in semantic segmentation tasks, using uncertainty estimation.
+  \item Comparison of multiple uncertainty estimation methods including MC Dropout, ensembles and evidential learning for deforestation and secondary mapping applications.
+  
+
+% A comparison of multiple uncertainty methods
+% Propose an architecture based on transformers 
+\end{enumerate}
+
+\section{Organization of the remaining parts of this thesis}
+
+Chapter \ref{sect:RelatetWorks} describes the related work available in the literature for uncertainty estimation using confidence-based approaches, multi-output approaches and evidential learning, and the use of uncertainty maps for aiding the annotating procedure.
+
+Chapter \ref{sect:Fundamentals} provides the fundamental concepts and theory for a better understanding of the proposed method.
+
+Chapter \ref{sect:Methodology} introduces and explains the preliminary proposed method for aiding the annotating and auditing process using MCD and ensembles as uncertainty estimation techniques.
+
+Chapter \ref{sect:Results} presents the datasets employed in the preliminary study, the experimental protocol followed in the experiments and the preliminary results obtained for the different uncertainty methods in deforestation detection.
+
+Chapter \ref{sect:Conclusions} provides directions for the development of the proposed method.
+
+% summarizes the conclusions derived from the performed experiments and 
