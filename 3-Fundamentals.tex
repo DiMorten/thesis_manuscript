@@ -82,7 +82,8 @@ u_i = -P(\hat{y}_{n,i}|x)
 
 \subsection{Multiple-Outcome Approaches}
 
-The methods introduced in the previous subsection are simple to implement and require a single training and inference run. Differently, the consistency-based uncertainty estimates rely on outcomes of multiple inference runs corresponding by either considering multiple random initialization values during training (e.g., ensembles), creating randomness at inference (e.g., Monte Carlo Dropout), or using the same network on augmented versions of the same input data (Test-Time Augmentation). In the following, we introduce the consistency-based methods.
+The methods introduced in the previous subsection are simple to implement and require a single training and inference run. Differently, the consistency-based uncertainty estimates rely on outcomes of multiple inference runs corresponding by either considering multiple random initialization values during training (e.g., ensembles), or creating randomness at inference (e.g., Monte Carlo Dropout). In the following, we introduce the consistency-based methods.
+% , or using the same network on augmented versions of the same input data (Test-Time Augmentation)
 
 To accommodate multiple outcomes for the same input, we denote hereafter with $\textbf{y}^{(i)}=[ y_1^{(i)},..., y_K^{(i)}]$ the $K$-dimensional vector representing the discrete probability distribution assigned by the $i$-th model for a given input, where $i \in \{1,...,n\}$, and $n$ is the number of outcomes.
 
@@ -119,14 +120,6 @@ This is the strategy adopted in our research. Therefore, we obtain $n$ distinct 
 It is worth noticing that this method is more computationally expensive than MCD, because it involves training $n$ networks, whereas MCD requires training a single network. %Ensembles consist of training the same network architecture multiple times. Due to random initialization, each training run produces different outcomes at inference. ensembles have been successfully used to boost performance and also to estimate uncertainty \cite{lakshminarayanan2017simple}. Uncertainty is obtained by calculating metric values over the inference outcomes of separately trained networks. This method is more computationally expensive compared to MCD, which only needs to train once. The uncertainty metrics we considered are described in Subsection \ref{ref:metrics}.
 
 % As in MCD, we assessed multiple uncertainty metrics: Predictive entropy, predictive variance, mutual information and expected Kullback-Leibler divergence.
-\bigskip
-\noindent
-\subsubsection{Test-Time Augmentation}
-
-Test-Time Augmentation (TTA) \cite{wang2019aleatoric} is one of the simplest uncertainty estimation techniques, and it relies on a single network. First, a single deterministic network is trained. At test time, data augmentation is applied to each test sample (e.g. rotation, flip, mirror and scaling). Then the disagreement between the different outcomes from the sample augmentations is calculated using one of the uncertainty metrics described in Subsection \ref{ref:metrics}.
-
-TTA is different from the previous approaches because it estimates the so-called aleatoric (data) uncertainty caused by variations in the input caused by various noise sources. MCD and ensembles capture uncertainty linked to the models themselves, the so-called epistemic or model uncertainty. %TTA is different from the previous approaches because it estimates the so-called aleatoric (data) uncertainty, caused by variations/noise in the input. MCD and ensembles capture uncertainty linked to the models themselves, the so-called epistemic or model uncertainty. 
-
 
 
 \subsubsection{Uncertainty Metrics}
